@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog1</title>
+</head>
+<body>
+    {% for single_post in all_blog_posts: %}
+        <hr>
+        <h1>{{ single_post["title"] }}</h1>
+        <h2>{{ single_post["subtitle"] }}</h2>
+    {% endfor %}
+    <hr>
+    <a href="{{ url_for('home') }}">Go to Home</a>
+    <a href="{{ url_for('blog2') }}">Go to Blog2</a>
+    <a href="{{ url_for('req_ex', name='Amy')}}">Go to Guess Age & Gender</a>
+</body>
+</html>

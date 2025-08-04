@@ -1,0 +1,20 @@
+Main goal is to learn Jinja templating (translates to dbt).
+The items starting before the Jinja lesson will help lead up to the Jinja project.
+The items after will help solidify it because Jinja may be directly used in those lessons.
+
+This will be days:
+41 - done
+42 - done
+43 - done
+44 - done
+54 - done
+55 - done
+56 - done
+57 (Jinja mentioned) - done (loops are singles and variables being rendered are doubles)
+58 - done
+59 - wip
+
+60
+61
+62
+63

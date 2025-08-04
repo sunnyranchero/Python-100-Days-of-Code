@@ -1,0 +1,13 @@
+
+https://html5up.net/
+
+
+to edit html live. go to the f12 menu on a webpage. 
+
+then go to the console and type:
+
+document.body.contentEditable=true
+
+this is javascript. The browser console is tied to this language.
+
+Once your edits are done, save the webpage (ctrl + s) to save. Then load up as the template in the flask server.

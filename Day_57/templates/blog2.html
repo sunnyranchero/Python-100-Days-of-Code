@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog2</title>
+</head>
+<body>
+    {% for single_post in all_blog_posts %}
+    {% if single_post["id"] == 2 %}
+        <h1>{{ single_post["title"] }}</h1>
+        <h2>{{ single_post["subtitle"] }}</h2>
+    {% endif %}
+    {% endfor %}
+    <hr>
+    <h3>For loop and if statement using Jinja practice.</h3>
+    <hr>
+    <a href="{{ url_for('home') }}">Go to Home</a>
+    <a href="{{ url_for('blog1') }}">Go to Blog1</a>
+    <a href="{{ url_for('req_ex', name='bob')}}">Go to Guess Age & Gender</a>
+</body>
+</html>
