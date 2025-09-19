@@ -81,4 +81,4 @@ def blog2():
     return render_template("blog2.html", all_blog_posts = full_content)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True) 
