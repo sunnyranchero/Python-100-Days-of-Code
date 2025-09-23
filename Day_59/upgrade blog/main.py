@@ -5,13 +5,12 @@ from rich import print as rp
 app = Flask(__name__)
 
 API_ENDPOINT = "https://api.npoint.io/cadbb639003d1baeeaf6"
+full_json_content = requests.get(API_ENDPOINT).json()
+# rp(full_json_content)
 
 
 @app.route("/")
 def home():
-    global API_ENDPOINT
-    full_json_content = requests.get(API_ENDPOINT).json()
-    rp(full_json_content)
     return render_template("index.html", all_posts_json = full_json_content)
 
 @app.route("/about")
@@ -21,6 +20,14 @@ def about():
 @app.route("/contact")
 def contact():
     return render_template("contact.html")
+
+@app.route("/post/<int:index>")
+def show_post(index):
+    requested_post = None
+    for blog_post in full_json_content:
+        if blog_post["id"] == index:
+            requested_post = blog_post
+    return render_template("post.html", post=requested_post)
 
 
 
