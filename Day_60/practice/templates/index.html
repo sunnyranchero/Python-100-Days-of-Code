@@ -8,7 +8,7 @@
 <body>
     <h1>Day 60 - HTML Forms</h1>
 
-    <form action="/login" method="post">
+    <form action="{{ url_for('receive_post')}}" method="post">
         <label for="name">Name</label>
         <input type="text" id="name" name="username" placeholder="name">
         <label for="password">Password</label>
