@@ -1,6 +1,6 @@
 from flask import Flask, render_template
 from flask_wtf import FlaskForm
-from wtforms import StringField
+from wtforms import StringField, PasswordField, SubmitField
 # from wtforms.validators import DataRequired
 
 
@@ -19,7 +19,8 @@ This will install the packages from requirements.txt for this project.
 
 class MyForm(FlaskForm):
     email = StringField('email')
-    password = StringField('password')
+    password = PasswordField('password')
+    submit = SubmitField(label="Log In")
 
 app = Flask(__name__)
 # This is the line that will create the secret key for the CRSF protection
