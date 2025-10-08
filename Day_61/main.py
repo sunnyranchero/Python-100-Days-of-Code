@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, flash
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
-from wtforms.validators import DataRequired
+from wtforms.validators import DataRequired, Email, Length
 
 
 '''
@@ -17,10 +17,13 @@ pip3 install -r requirements.txt
 This will install the packages from requirements.txt for this project.
 '''
 
+
 class MyForm(FlaskForm):
-    email = StringField('email', validators=[DataRequired()])
-    password = PasswordField('password', validators=[DataRequired()])
+    email = StringField('email', validators=[DataRequired(), Email()])
+    password = PasswordField('password', validators=[DataRequired(), Length(min=8)])
     submit = SubmitField(label="Log In")
+
+
 
 app = Flask(__name__)
 # This is the line that will create the secret key for the CRSF protection
@@ -37,19 +40,23 @@ def login():
     if form.validate_on_submit():
         
         # Storing the input values so they can be used later for auth.
-        email = form.email.data
-        password = form.password.data
-        
-        # Skipping this for now so we can just flash a message.
+        if form.email.data == "admin@email.com" and form.password.data == "12345678":
+            # Skipping this for now so we can just flash a message.
 
-        flash(message="Login successful!", category="success")
-        return redirect('/success')
-    return render_template('login.html', form=form)
+            # flash(message="Login successful!", category="success")
+            return render_template("success.html")
+        else:
+            return render_template("denied.html")
+    return render_template("login.html", form=form)
 
 
-@app.route("/success")
-def success():
-    return render_template("success.html")
+# @app.route("/success")
+# def success():
+#     return render_template("success.html")
+
+# @app.route("/denied")
+# def denied():
+#     return render_template("denied.html")
 
 
 if __name__ == '__main__':
