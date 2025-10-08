@@ -1,0 +1,28 @@
+<!-- Written to utilize template inheritance. -->
+
+<!-- Inherit from the base.html file -->
+{% extends "base.html" %}
+
+<!-- utilize the block title to dynamically change the title on the page -->
+{% block title %}Success2{% endblock %}
+
+<!-- dynamically build the block content for this specific page -->
+{% block content %}
+    <div class="container">
+        <h1>Top Secret2</h1>
+        <iframe
+         src="https://giphy.com/embed/Ju7l5y9osyymQ"
+         width="480"
+         height="360"
+         frameborder="0"
+         class="giphy-embed"
+         allowfullscreen>
+        </iframe>
+        <p>
+            <a href="https://giphy.com/gifs/rick-astley-Ju7l5y9osyymQ">
+                via GIPHY
+            </a>
+        </p>
+    
+    </div>
+{% endblock %}

@@ -44,9 +44,9 @@ def login():
             # Skipping this for now so we can just flash a message.
 
             # flash(message="Login successful!", category="success")
-            return render_template("success.html")
+            return render_template("success2.html")
         else:
-            return render_template("denied.html")
+            return render_template("denied2.html")
     return render_template("login.html", form=form)
 
 
@@ -57,7 +57,6 @@ def login():
 # @app.route("/denied")
 # def denied():
 #     return render_template("denied.html")
-
 
 if __name__ == '__main__':
     app.run(debug=True)
