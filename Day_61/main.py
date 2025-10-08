@@ -1,7 +1,7 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, redirect, flash
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
-# from wtforms.validators import DataRequired
+from wtforms.validators import DataRequired
 
 
 '''
@@ -18,8 +18,8 @@ This will install the packages from requirements.txt for this project.
 '''
 
 class MyForm(FlaskForm):
-    email = StringField('email')
-    password = PasswordField('password')
+    email = StringField('email', validators=[DataRequired()])
+    password = PasswordField('password', validators=[DataRequired()])
     submit = SubmitField(label="Log In")
 
 app = Flask(__name__)
@@ -31,12 +31,25 @@ app.secret_key = "some random string."
 def home():
     return render_template('index.html')
 
-@app.route("/login")
+@app.route("/login", methods=["GET", "POST"])
 def login():
     form = MyForm()
-    # if form.validate_on_submit():
-    #     return redirect('/success')
+    if form.validate_on_submit():
+        
+        # Storing the input values so they can be used later for auth.
+        email = form.email.data
+        password = form.password.data
+        
+        # Skipping this for now so we can just flash a message.
+
+        flash(message="Login successful!", category="success")
+        return redirect('/success')
     return render_template('login.html', form=form)
+
+
+@app.route("/success")
+def success():
+    return render_template("success.html")
 
 
 if __name__ == '__main__':
