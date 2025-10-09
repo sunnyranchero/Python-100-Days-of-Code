@@ -4,15 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{% endblock title %}</title>
-    <style>
+    <!-- 
+    Don't worry about the red "errors" here if using the styling block
+    The linting/intellisense is not recognizing the jinja templating
+    Someone recommended changing the editor language to django for it to be
+    detected properly. 
+        -- leaving the notes for now even though I moved to bootstrap
+      -->
     {% block styling %}
-    body {
-        background: purple;
-    }
+        {{ bootstrap.load_css() }}
     {% endblock %}
-    </style>
 </head>
 <body>
     {% block content %}{% endblock %}
 </body>
+{% block scripts %}
+    {{ bootstrap.load_js() }}
+{% endblock %}
 </html>

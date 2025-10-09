@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, flash
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import DataRequired, Email, Length
+from flask_bootstrap import Bootstrap5
 
 
 '''
@@ -29,6 +30,8 @@ app = Flask(__name__)
 # This is the line that will create the secret key for the CRSF protection
 app.secret_key = "some random string."
 
+# I chose bs5 because the version was not specified in the assignment.
+bootstrap = Bootstrap5(app)
 
 @app.route("/")
 def home():
