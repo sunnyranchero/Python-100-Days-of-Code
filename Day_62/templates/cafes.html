@@ -13,6 +13,12 @@
           <!-- This is where you will write the code to render a Bootstrap 
           Table that contains all the information from the 
           cafe-data.csv file. -->
+          <!-- Start formatting this table to split the entries in each row. -->
+          {% for row in cafes %}
+            <tr>
+              <td>{{ row }}</td>
+            </tr>
+          {% endfor %}
   	  </table>
 
       <p><a href="#">Return to index page</a></p>

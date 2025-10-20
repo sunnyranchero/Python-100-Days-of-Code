@@ -4,6 +4,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
 import csv
+import os
 
 '''
 Red underlines? Install the required packages first: 
@@ -55,12 +56,20 @@ def add_cafe():
 
 @app.route('/cafes')
 def cafes():
-    with open('cafe-data.csv', newline='', encoding='utf-8') as csv_file:
+    # I ran into an issue where the cwd was causing issues with
+    # accessing the cwd/pwd for this project because of how I have it
+    # being run. The solution is to change the dir to the executing script.
+    os.chdir(os.path.dirname(__file__))
+    with open('./cafe-data.csv', newline='', encoding='utf-8') as csv_file:
         csv_data = csv.reader(csv_file, delimiter=',')
         list_of_rows = []
         for row in csv_data:
             list_of_rows.append(row)
     return render_template('cafes.html', cafes=list_of_rows)
+    # print(f"This is the file that is run: {__file__}")
+    # print(f"This is the dirname: {os.path.dirname(__file__)}")
+    # print(f"This is the pwd: {os.getcwd()}")
+    return render_template('cafes.html')
 
 
 if __name__ == '__main__':
