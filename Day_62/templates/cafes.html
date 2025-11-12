@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Restaurants{% endblock %}
+{% block title %}All Cafes{% endblock %}
 
 {% block content %}
 
@@ -9,20 +9,25 @@
 
       <h1>All Cafes</h1>
 
-	  <table class="table table-dark table-striped table-hover">
+	  <table class="table table-dark table-striped table-hover" style="color: white;">
           <!-- This is where you will write the code to render a Bootstrap 
           Table that contains all the information from the 
           cafe-data.csv file. -->
           <!-- Start formatting this table to split the entries in each row. -->
           {% for row in cafes %}
             <tr>
-              <td>{{ row }}</td>
+              <!-- We loop through each item in the row and print -->
+              <!-- Then we slice in the value character 0 through 4 to check for
+              https and format accordingly. -->
+              {% for item in row %} {% if item[0:4] == "http" %}
+              <td><a href="{{ item }}">Maps link</a></td>
+              {% else %}
+              <td>{{ item }}</td>
+              {% endif %}{% endfor %} 
             </tr>
           {% endfor %}
   	  </table>
-
-      <p><a href="#">Return to index page</a></p>
-
+      <p><a href="{{ url_for('home') }}">Return to index page</a></p>
     </div>
   </div>
 </div>

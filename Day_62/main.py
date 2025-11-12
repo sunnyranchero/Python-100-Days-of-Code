@@ -1,8 +1,8 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, redirect, url_for
 from flask_bootstrap import Bootstrap5
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
-from wtforms.validators import DataRequired
+from wtforms import StringField, SubmitField, SelectField
+from wtforms.validators import DataRequired, URL, Regexp
 import csv
 import os
 
@@ -23,9 +23,47 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
 Bootstrap5(app)
 
+"""This regex pattern:
+
+^ asserts the start of the string.
+(0?[1-9]|1[0-2]) matches hours from 01 to 12 (with optional leading zero for single-digit hours).
+: matches the literal colon.
+[0-5][0-9] matches valid minutes from 00 to 59.
+\s? allows for zero or one whitespace character between the time and AM/PM.
+(?:AM|PM|am|pm) is a non-capturing group matching the AM or PM indicator in any case.
+$ asserts the end of the string."""
+
+def update_csv():
+    pass
+
 
 class CafeForm(FlaskForm):
-    cafe = StringField('Cafe name', validators=[DataRequired()])
+    cafe = StringField('Cafe name',
+                        validators=[DataRequired()])
+    # Adding different fields into the base form
+    cafe_location = StringField('Cafe Location on Google(URL)',
+                                 validators=[DataRequired(), URL(message="This needs to be a valid URL.")] )
+    opening_time = StringField('Opening Time e.g. 8AM',
+                                validators=[DataRequired(), Regexp(
+                                    regex=r"^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(?:AM|PM|am|pm)$",
+                                    message="Please enter a valid time in HH:MM AM/PM format"
+                                )])
+    closing_time = StringField('Closing Time e.g. 5:30PM',
+                               validators=[DataRequired(), Regexp(
+                                    regex=r"^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(?:AM|PM|am|pm)$",
+                                    message="Please enter a valid time in HH:MM AM/PM format"
+                                )])
+    coffee_rating = SelectField('Coffee Rating',
+                                validators=[DataRequired()],
+                                choices=(['✘'] + ['☕️' * i for i in range(1, 6)]))
+    wifi_strength_rating = SelectField('Wifi Strength Rating',
+                                       validators=[DataRequired()],
+                                       choices=(['✘'] + ['💪' * i for i in range(1, 6)]))
+    power_outlet_rating = SelectField('Power Outlet Rating',
+                                       validators=[DataRequired()],
+                                       choices=(['✘'] + ['🔌' * i for i in range(1, 6)]))
+
+    # The submit is from the original.
     submit = SubmitField('Submit')
 
 # Exercise:
@@ -43,14 +81,17 @@ def home():
     return render_template("index.html")
 
 
-@app.route('/add')
+@app.route('/add', methods=['GET', 'POST'])
 def add_cafe():
     form = CafeForm()
     if form.validate_on_submit():
         print("True")
+        # print(form)
+        return redirect(url_for('add_cafe'))
     # Exercise:
     # Make the form write a new row into cafe-data.csv
     # with   if form.validate_on_submit()
+    print(os.getcwd())
     return render_template('add.html', form=form)
 
 
@@ -69,8 +110,12 @@ def cafes():
     # print(f"This is the file that is run: {__file__}")
     # print(f"This is the dirname: {os.path.dirname(__file__)}")
     # print(f"This is the pwd: {os.getcwd()}")
-    return render_template('cafes.html')
+    # return render_template('cafes.html')
 
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+# TODO: Get the PWD correct to identify the file I am updating. 
+# Then call that function within the submit section
+# Also, make a normalize time function.
