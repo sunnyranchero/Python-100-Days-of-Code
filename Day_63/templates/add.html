@@ -6,7 +6,7 @@
   </head>
   <body>
     <!-- I need to add the name attribute to access these once submitted. -->
-    <form action="" method="POST">
+    <form action="{{ url_for('add') }}" method="POST">
       <label>Book Name</label>
       <input type="text" name="title"/>
       <label>Book Author</label>
@@ -15,5 +15,8 @@
       <input type="text" name="rating"/>
       <button type="submit">Add Book</button>
     </form>
+    <br>
+    <a class="space-above" href="{{ url_for('home') }}">Go home</a>
+
   </body>
 </html>

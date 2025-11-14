@@ -21,7 +21,8 @@ all_books = []
 
 @app.route('/')
 def home():
-    return render_template("index.html")
+
+    return render_template("index.html", books=all_books)
 
 
 @app.route("/add", methods=["GET", "POST"])
@@ -30,12 +31,15 @@ def home():
 def add():
     # Set up my data and update the flask route
     if request.method == "POST":
-        data = {
+        new_book = {
             "title":request.form.get(key="title"),
             "author":request.form.get(key="author"),
-            "rating":request.form.get(key="rating")
+            "rating":request.form.get(key="rating"),
         }
-        rp(data)
+        rp(new_book)
+        all_books.append(new_book)
+        
+        return redirect(url_for('home'))
 
     return render_template("add.html")
 
