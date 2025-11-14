@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for
+from rich import print as rp
 
 '''
 Red underlines? Install the required packages first: 
@@ -23,8 +24,19 @@ def home():
     return render_template("index.html")
 
 
-@app.route("/add")
+@app.route("/add", methods=["GET", "POST"])
+# GET is so the user can be served the form
+# POST is so we can submit the form with the inputted data.
 def add():
+    # Set up my data and update the flask route
+    if request.method == "POST":
+        data = {
+            "title":request.form.get(key="title"),
+            "author":request.form.get(key="author"),
+            "rating":request.form.get(key="rating")
+        }
+        rp(data)
+
     return render_template("add.html")
 
 
