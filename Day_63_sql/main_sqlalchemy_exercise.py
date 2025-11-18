@@ -26,7 +26,7 @@ db = SQLAlchemy(model_class=Base)
 app = Flask(__name__)
 
 # config SQLite DB
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///project.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///project3.db"
 # init the app with the extension
 db.init_app(app)
 
@@ -35,15 +35,26 @@ db.init_app(app)
 # CamelCase class name to snake_case.
 # -- so here that means User is the table name converted to user.
 class User(db.Model):
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     username: Mapped[str] = mapped_column(unique=True)
     email: Mapped[str]
 
 class Books(db.Model):
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(unique=True)
     author: Mapped[str]
     rating: Mapped[float]
+
+    # Optional dunder method to produce a string rep of the created object
+    # If I used the auto complete, this is literally what creates the...
+    ## X object at 0x{some memory location number}
+    # def __repr__(self):
+    #     return super().__repr__()
+    
+    # This will force custom output such as the book object's attr title
+    # __repr__ is the fallback if __str__ is not set.
+    def __repr__(self):
+        return f"Book {self.title}"
 
 # After all models and tables are defined, call SQLAlchemy.create_all() to 
 # create the table schema in the database. 
@@ -61,40 +72,67 @@ with app.app_context():
 # Within a Flask view or CLI command, you can use db.session 
 # to execute queries and modify model data.
 
-@app.route("/users")
-def user_list():
-    users = db.session.execute(db.select(User).order_by(User.username)).scalars()
-    return render_template("user/list.html", users=users)
+# Create a record within the tables above.
 
-@app.route("/users/create", methods=["GET", "POST"])
-def user_create():
-    if request.method == "POST":
-        user = User(
-            username=request.form["username"],
-            email=request.form["email"],
-        )
-        db.session.add(user)
-        db.session.commit()
-        return redirect(url_for("user_detail", id=user.id))
+## activate/open the app context like when we interact with a file.
+with app.app_context():
+    new_book = Books(title="Harry Potter123123", author="J. K. Rowling",
+                      rating=9.3)
+    print("Adding the new book...")
+    db.session.add(new_book)
+    print("Committing the new book.")
+    db.session.commit()
 
-    return render_template("user/create.html")
+with app.app_context():
+    new_entry = User(username="testing", email="something@test.com")
+    print("adding the new user")
+    db.session.add(new_entry)
+    print("Committing the new user.")
+    db.session.commit()
+    
 
-@app.route("/user/<int:id>")
-def user_detail(id):
-    user = db.get_or_404(User, id)
-    return render_template("user/detail.html", user=user)
 
-@app.route("/user/<int:id>/delete", methods=["GET", "POST"])
-def user_delete(id):
-    user = db.get_or_404(User, id)
 
-    if request.method == "POST":
-        db.session.delete(user)
-        db.session.commit()
-        return redirect(url_for("user_list"))
+## None of this is needed because we are not doing the entry from the website
+## We are basically just leveraging the sqlalchemy with flask behind the scenes.
 
-    return render_template("user/delete.html", user=user)
+# @app.route("/users")
+# def user_list():
+#     users = db.session.execute(
+#         db.select(User).order_by(User.username)).scalars()
+#     return render_template("user/list.html", users=users)
+
+# @app.route("/users/create", methods=["GET", "POST"])
+# def user_create():
+#     if request.method == "POST":
+#         user = User(
+#             username=request.form["username"],
+#             email=request.form["email"],
+#         )
+#         db.session.add(user)
+#         db.session.commit()
+#         return redirect(url_for("user_detail", id=user.id))
+
+#     return render_template("user/create.html")
+
+# @app.route("/user/<int:id>")
+# def user_detail(id):
+#     user = db.get_or_404(User, id)
+#     return render_template("user/detail.html", user=user)
+
+# @app.route("/user/<int:id>/delete", methods=["GET", "POST"])
+# def user_delete(id):
+#     user = db.get_or_404(User, id)
+
+#     if request.method == "POST":
+#         db.session.delete(user)
+#         db.session.commit()
+#         return redirect(url_for("user_list"))
+
+#     return render_template("user/delete.html", user=user)
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(
+        debug=True, use_reloader=False
+        )
