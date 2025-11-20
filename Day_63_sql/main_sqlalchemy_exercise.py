@@ -26,7 +26,7 @@ db = SQLAlchemy(model_class=Base)
 app = Flask(__name__)
 
 # config SQLite DB
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///project3.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///new-books-collection.db"
 # init the app with the extension
 db.init_app(app)
 
@@ -34,10 +34,10 @@ db.init_app(app)
 # The model will generate a table name by converting the 
 # CamelCase class name to snake_case.
 # -- so here that means User is the table name converted to user.
-class User(db.Model):
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    username: Mapped[str] = mapped_column(unique=True)
-    email: Mapped[str]
+# class User(db.Model):
+#     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+#     username: Mapped[str] = mapped_column(unique=True)
+#     email: Mapped[str]
 
 class Books(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -83,12 +83,12 @@ with app.app_context():
     print("Committing the new book.")
     db.session.commit()
 
-with app.app_context():
-    new_entry = User(username="testing", email="something@test.com")
-    print("adding the new user")
-    db.session.add(new_entry)
-    print("Committing the new user.")
-    db.session.commit()
+# with app.app_context():
+#     new_entry = User(username="testing", email="something@test.com")
+#     print("adding the new user")
+#     db.session.add(new_entry)
+#     print("Committing the new user.")
+#     db.session.commit()
     
 
 
