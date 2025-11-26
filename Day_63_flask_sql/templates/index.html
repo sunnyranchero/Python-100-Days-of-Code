@@ -9,7 +9,10 @@
     {% if books %}
       <ul>
         {% for item in books %}
-        <li>{{item.title}} - {{item.author}} - {{item.rating}}/10</li>
+        <li>
+          {{item.title}} - {{item.author}} - {{item.rating}}/10
+          <a href="">Edit Rating</a>
+        </li> 
         {% endfor %}
       </ul>
       {% else %}

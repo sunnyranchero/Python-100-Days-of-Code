@@ -7,16 +7,32 @@
   <body>
     <!-- I need to add the name attribute to access these once submitted. -->
     <form action="{{ url_for('add') }}" method="POST">
-      <label>Book Name</label>
-      <input type="text" name="title"/>
-      <label>Book Author</label>
-      <input type="text" name="author"/>
-      <label>Rating</label>
-      <input type="text" name="rating"/>
-      <button type="submit">Add Book</button>
+      <div> 
+        <label>Book Name</label>
+        <input type="text" name="title"/>
+
+        <label>Book Author</label>
+        <input type="text" name="author"/>
+
+        <label>Rating</label>
+        <input type="text" name="rating"/>
+
+        <button type="submit">Add Book</button>
+      </div>
+      <div>
+        <label>Type</label>
+        <select name="type"> 
+          <option value="add" selected>Add</option>
+          <option value="update">Update</option>    
+          <option value="delete">Delete</option>
+        </select>
+      </div>
     </form>
     <br>
     <a class="space-above" href="{{ url_for('home') }}">Go home</a>
-
+    <p>
+      ***set title to <strong>!reset!</strong> 
+      to clear the database and load test data.
+    </p>
   </body>
 </html>

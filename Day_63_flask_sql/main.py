@@ -7,7 +7,7 @@ from rich import print as rp
 
 os.chdir(os.path.dirname(__file__))
 app = Flask(__name__)
-
+##############################################################
 # This is set to pass because nothing more has to be altered...
 # ...It simply inherits.
 # First we need to initialize the db
@@ -33,12 +33,37 @@ class BooksCollection(db.Model):
 # Create the table if it does not already exist.
 with app.app_context():
     db.create_all()
+############################################################
 
 all_books = []
+
+def truncate_table():
+    """This will truncate the existing table to restart it."""
+    with app.app_context():
+        record_count_truncated = db.session.query(BooksCollection).delete()
+        rp(f"Total records deleted: {record_count_truncated}")
+        db.session.commit()
+
+def set_testing_data():
+    """This will insert testing data during the project dev"""
+    with app.app_context():
+        test_book1 = BooksCollection(title="TestTitle1",
+                                     author="TestAuthor1",
+                                     rating=99.1)
+        test_book2 = BooksCollection(title="TestTitle2",
+                                     author="TestAuthor2",
+                                     rating=99.2)
+        test_book3 = BooksCollection(title="TestTitle3",
+                                     author="TestAuthor3",
+                                     rating=99.3)
+        db.session.add_all([test_book1, test_book2, test_book3])
+        db.session.commit()
+        rp("Records added : 3")
 
 def refresh_listing():
     """Create a reusable way to refresh the current lsting."""
     with app.app_context():
+        all_books.clear()
         select_all_results = db.session.execute(db.select(BooksCollection))
         book_objects = select_all_results.scalars()
         for book_obj in book_objects:
@@ -50,13 +75,54 @@ def refresh_listing():
 
             all_books.append(temp_dict)
 
-refresh_listing()
+def insert_new_book(title:str, author:str, rating:float):
+    """Generate a reusable process for adding new book entries. """
+    with app.app_context():
+        new_book = BooksCollection(title=title,
+                                   author=author,
+                                   rating=rating)
+        rp("Adding a new book...")
+        db.session.add(new_book)
+        db.session.commit()
+
+def update_entry(book_title_orig:str, field_to_update:str, value):
+    """send a dict of {"author":"value, "title":"value", "rating":value}"""
+    # Convert the book title to the id
+    # Then do the update off the id which is the PK.
+    # Title is unique so either could technically work here. 
+    # I simply prefer using the pk
+    db_obj = db.session.execute(
+        db.select(BooksCollection).where(BooksCollection.title==book_title_orig)
+    ).scalar()
+    if db_obj is not None:
+        with app.app_context():
+            book_update = db.session.execute(
+                db.select(BooksCollection).where(BooksCollection.id==db_obj.id)
+            ).scalar()
+            if field_to_update.lower() == "author":
+                book_update.author = value
+                rp("Update completed")
+            elif field_to_update.lower() == "title":
+                book_update.title = value
+                rp("Update completed")
+            elif field_to_update.lower() == "rating":
+                book_update.rating = value
+                rp("Update completed")
+            else:
+                rp(f"{field_to_update} is not a valid value.")
+                rp(f"Please select: author, title, or rating.")
+
+
+
 # exit()
 
 @app.route('/')
 def home():
-
+    # Refresh the listing upon going to the home page.
+    # TODO: create the DB update in add otherwise this won't save the new data.
+    refresh_listing()
     return render_template("index.html", books=all_books)
+
 
 @app.route("/add", methods=["GET", "POST"])
 # GET is so the user can be served the form
@@ -64,15 +130,35 @@ def home():
 def add():
     # Set up my data and update the flask route
     if request.method == "POST":
-        new_book = {
-            "title":request.form.get(key="title"),
-            "author":request.form.get(key="author"),
-            "rating":request.form.get(key="rating"),
-        }
-        rp(new_book)
-        all_books.append(new_book)
+        if request.form.get(key="type").lower() == "add":
+            new_book = {
+                "title":request.form.get(key="title"),
+                "author":request.form.get(key="author"),
+                "rating":request.form.get(key="rating"),
+            }
+            rp(new_book)
+            # all_books.append(new_book)
+            # Update the db to reflect the new add.
+            insert_new_book(title=new_book["title"],
+                            author=new_book["author"],
+                            rating=new_book["rating"])
+            
+            return redirect(url_for('home'))
         
-        return redirect(url_for('home'))
+        elif request.form.get(key="type").lower() == "update":
+            # TODO: make this function by getting the info from the form.
+            ## Or just make a drop down of all the available titles.
+            update_entry(book_title_orig="test2", field_to_update="", value="")
+
+            return redirect(url_for('home'))
+        
+        elif request.form.get(key="type") == "delete":
+            if request.form.get(key="title").lower() == "!reset!":
+                truncate_table()
+                set_testing_data()
+
+                return redirect(url_for('home'))
+
 
     return render_template("add.html")
 
