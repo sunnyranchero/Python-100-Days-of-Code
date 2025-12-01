@@ -68,6 +68,7 @@ def refresh_listing():
         book_objects = select_all_results.scalars()
         for book_obj in book_objects:
             temp_dict = {}
+            temp_dict["id"] = book_obj.id
             temp_dict["title"] = book_obj.title
             temp_dict["author"] = book_obj.author
             temp_dict["rating"] = book_obj.rating
@@ -119,9 +120,17 @@ def update_entry(book_title_orig:str, field_to_update:str, value):
 @app.route('/')
 def home():
     # Refresh the listing upon going to the home page.
-    # TODO: create the DB update in add otherwise this won't save the new data.
     refresh_listing()
     return render_template("index.html", books=all_books)
+
+@app.route("/edit", methods=["GET", "POST"])
+def edit():
+    if request.method == "POST":
+        pass
+   
+    book_id = request.args.get("book_id")
+    book = db.session.get(BooksCollection, ident=book_id)
+    return render_template("update_rating.html", book=book)
 
 
 @app.route("/add", methods=["GET", "POST"])

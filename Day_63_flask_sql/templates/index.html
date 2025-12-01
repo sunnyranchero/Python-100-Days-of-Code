@@ -11,7 +11,7 @@
         {% for item in books %}
         <li>
           {{item.title}} - {{item.author}} - {{item.rating}}/10
-          <a href="">Edit Rating</a>
+          <a href="{{ url_for('edit', book_id=item.id) }}">Edit Rating</a>
         </li> 
         {% endfor %}
       </ul>
@@ -19,6 +19,8 @@
       <p>Library is empty.</p>
     {% endif %}
 
-    <a href="{{ url_for('add') }}">Add New Book</a>
+    <div>
+      <a href="{{ url_for('add') }}">Add New Book</a>
+    </div>
   </body>
 </html>
