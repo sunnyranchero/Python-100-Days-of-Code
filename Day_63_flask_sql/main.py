@@ -193,6 +193,14 @@ def add():
 
     return render_template("add.html")
 
+@app.route("/delete/<book_id>", methods=["GET", "POST"])
+def delete(book_id):
+    book = db.get_or_404(BooksCollection, book_id)
+    db.session.delete(book)
+    db.session.commit()
+    
+    return redirect(url_for("home"))
+
 
 if __name__ == "__main__":
     app.run(debug=True, use_reloader=True)

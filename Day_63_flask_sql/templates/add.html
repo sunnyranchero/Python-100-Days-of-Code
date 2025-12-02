@@ -8,17 +8,19 @@
     <!-- I need to add the name attribute to access these once submitted. -->
     <form action="{{ url_for('add') }}" method="POST">
       <div> 
-        <label>Book Name</label>
-        <input type="text" name="title"/>
-
-        <label>Book Author</label>
-        <input type="text" name="author"/>
-
-        <label>Rating</label>
-        <input type="text" name="rating"/>
-
-        <button type="submit">Add Book</button>
-      </div>
+        <div>
+          <label>Book Name</label>
+          <input type="text" name="title"/>
+        </div>
+        <div>
+          <label>Book Author</label>
+          <input type="text" name="author"/>
+        </div>
+        <div>
+          <label>Rating</label>
+          <input type="text" name="rating"/>
+          <br>
+          <br>
       <div>
         <label>Type</label>
         <select name="type"> 
@@ -26,6 +28,7 @@
           <option value="update">Update</option>    
           <option value="delete">Delete</option>
         </select>
+        <button type="submit">Add Book</button>
       </div>
     </form>
     <br>
