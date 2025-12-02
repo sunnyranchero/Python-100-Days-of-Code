@@ -123,13 +123,35 @@ def home():
     refresh_listing()
     return render_template("index.html", books=all_books)
 
-@app.route("/edit", methods=["GET", "POST"])
-def edit():
+@app.route("/edit/<book_id>", methods=["GET", "POST"])
+def edit(book_id):
+    # This part allows for retrieval of the book id from the home page.
+    # book_id = request.args.get("book_id")
+
+    # Placing this here creates the object instance.
+    # it can be used to change the value in the database.
+
     if request.method == "POST":
-        pass
-   
-    book_id = request.args.get("book_id")
-    book = db.session.get(BooksCollection, ident=book_id)
+        # print(f"The book ID2 is: {book_id}")
+        book_to_update = db.get_or_404(BooksCollection, book_id)
+        print(f"The book ID is: {book_to_update.id}")
+        # print(f"rating print test2: {book.rating}")
+        # Get the new rating from the input form
+        try:
+            new_rating = float(request.form["rating"])
+        except ValueError as e:
+            print(f"The float conversion was invalid\nRedirecting home...")
+            return redirect(url_for("home"))
+        # Assign the new rating into the database.
+        book_to_update.rating = new_rating
+        db.session.commit()
+
+        print(f"The new rating is: {new_rating}")
+        return redirect(url_for("home"))   
+    
+    book = db.get_or_404(BooksCollection, book_id)
+    print(f"GET: The book ID is: {book_id}")
+    print(f"GET: rating print test: {book.rating}")
     return render_template("update_rating.html", book=book)
 
 
@@ -173,5 +195,5 @@ def add():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, use_reloader=False)
+    app.run(debug=True, use_reloader=True)
 

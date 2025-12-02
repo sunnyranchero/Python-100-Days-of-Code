@@ -7,14 +7,14 @@
   <body>
     <!-- I need to add the name attribute to access these once submitted. -->
     <!-- <form action="{{ url_for('edit', book_id=book_id) }}" method="POST"> -->
-    <form action="" method="POST">
+    <form action="{{ url_for('edit', book_id=book.id) }}" method="POST">
         <div>
            <p><strong>Book Name:</strong> {{ book.title }}</p>
            <p><strong>Author:</strong> {{ book.author }}</p>
            <p><strong>Rating:</strong> {{ book.rating }}</p>
         </div>
         <div> 
-        <input type="text" name="rating" placeholder="New Rating"/>
+        <input type="numeric" name="rating" placeholder="New Rating"/>
         <button type="submit">Update rating</button>
       </div>
     </form>
