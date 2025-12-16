@@ -30,6 +30,13 @@
     </div>
   </div>
 </div>
+{% for movie in movie_list %}
+<div>
+  <p>
+  {{ movie.id }} | {{ movie.title }} | {{ movie.year }} | {{ movie.ranking }}
+  </p>
+</div>
+{% endfor %}
 <div class="container text-center add">
 <a href="#" class="button">Add Movie</a>
 </div>
