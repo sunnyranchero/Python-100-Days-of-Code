@@ -1,8 +1,31 @@
 {% extends 'base.html' %} {% from 'bootstrap5/form.html' import render_form %}
 {% block title %}Edit Movies{% endblock %} {% block content %}
 <div class="content">
-  <h1 class="heading">Movie Title</h1>
+  <h1 class="heading">{{movie.title}}</h1>
   <p class="description">Edit Movie Rating</p>
-  {{ render_form(form, novalidate=True) }}
+  <div>
+    {{ render_form(form, novalidate=True) }}
+    <a href="{{ url_for('home') }}" class="btn btn-secondary mt-3">Cancel</a>
+  </div>
 </div>
+<!-- I added the card from before so there would be something to reference -->
+  <div class="card mb-4 mt-md-5" >
+    <div class="front" style="background-image: url('{{movie.img_url}}');">
+        <p class="large">{{movie.ranking}}</p>
+    </div>
+    <div class="back">
+      <div>
+    <div class="title">{{movie.title}} <span class="release_date">({{movie.year}})</span></div>
+        <div class="rating">
+            <label>{{movie.rating}}</label>
+          <i class="fas fa-star star"></i>
+        </div>
+          <p class="review">"{{movie.review}}"</p>
+        <p class="overview">
+            {{movie.description}}
+        </p>
+        </div>
+      </div>
+    </div>
+  </div>
 {% endblock %}

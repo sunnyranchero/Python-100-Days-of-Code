@@ -4,8 +4,8 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import Integer, String, Float, exists
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
-from wtforms.validators import DataRequired
+from wtforms import StringField, SubmitField, DecimalField
+from wtforms.validators import DataRequired, NumberRange, Length
 import requests
 import os
 from rich import print as rp
@@ -102,6 +102,16 @@ def select_all() -> list[MoviesDb] :
 
     return movie_obj_list
 
+# Define a form to use in the sql code (this was from a few lessons back)
+
+class EditMovieForm(FlaskForm):
+    movie_rating = DecimalField('Rating out of 10 (7, 5.5, 6.3)', 
+                                places=1,
+                                validators=[DataRequired(), 
+                                            NumberRange(min=0, max=10)])
+    new_review = StringField('Your Review',
+                             validators=[DataRequired(), Length(max=100)])
+    submit_btn = SubmitField('Submit')
 
 
 # Movie 1 info:
@@ -153,6 +163,26 @@ def home():
     movie_list = select_all()
 
     return render_template("index.html", movie_list=movie_list)
+
+@app.route("/edit", methods=["GET", "POST"])
+def edit():
+    form = EditMovieForm()
+    id = request.args.get("id")
+    movie_query = db.session.execute(db.select(MoviesDb).where(MoviesDb.id==id))
+    scalar_result = movie_query.scalar()
+
+    # if request.method == "POST":
+    #     print("hello")
+    if form.validate_on_submit():
+        rp(form.movie_rating.data)
+        rp(form.new_review.data)
+        scalar_result.rating = form.movie_rating.data
+        scalar_result.review = form.new_review.data
+        db.session.commit()      
+
+        return redirect(url_for("home"))
+
+    return render_template("edit.html", movie=scalar_result, form=form)
 
 
 if __name__ == '__main__':
