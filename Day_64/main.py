@@ -15,14 +15,6 @@ if os.getcwd() != os.path.dirname(__file__):
     os.chdir(os.path.abspath(os.path.dirname(__file__)))
     print("Cwd was changed to the current file dir __file__")
 
-# TODO: Create the database, make sure to only do this if it does not exist
-# TODO: Create the table if it does not exist
-# TODO: Add movie 1 if it does not exist
-# TODO: Add movie 2 if it does not exist
-
-
-
-
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
 Bootstrap5(app)
@@ -113,6 +105,11 @@ class EditMovieForm(FlaskForm):
                              validators=[DataRequired(), Length(max=100)])
     submit_btn = SubmitField('Submit')
 
+class AddMovieForm(FlaskForm):
+    movie_title = StringField('Movie Title',
+                              validators=[DataRequired()])
+    submit_btn = SubmitField('Submit')
+
 
 # Movie 1 info:
 new_movie_1 = MoviesDb(
@@ -146,6 +143,10 @@ new_movie_2 = MoviesDb(
 # Keeping the insertion in the home page to limit recalls.
 # Nice to have: Maybe add an endpoint called "starter" to perform that insert.
 
+with app.app_context():
+    add_movie(new_movie_1)
+    add_movie(new_movie_2)
+
 @app.route("/")
 def home():
     # If a database function that I made above is called within
@@ -155,10 +156,7 @@ def home():
     # Also, the only time to include the app.app_context() block is  
     # outside an endpoint like where create_all() is. 
 
-
     # Triggering the add function so there is always test data.
-    add_movie(new_movie_1)
-    add_movie(new_movie_2)
 
     movie_list = select_all()
 
@@ -174,8 +172,8 @@ def edit():
     # if request.method == "POST":
     #     print("hello")
     if form.validate_on_submit():
-        rp(form.movie_rating.data)
-        rp(form.new_review.data)
+        # rp(form.movie_rating.data)
+        # rp(form.new_review.data)
         scalar_result.rating = form.movie_rating.data
         scalar_result.review = form.new_review.data
         db.session.commit()      
@@ -184,6 +182,25 @@ def edit():
 
     return render_template("edit.html", movie=scalar_result, form=form)
 
+@app.route("/delete", methods=["GET", "POST"])
+def delete():
+    id = request.args.get("id")
+    # This is coded to work by grabbing by PK.
+    selected_movie = db.get_or_404(MoviesDb, id)
+    db.session.delete(selected_movie)
+    db.session.commit()
+
+    return redirect(url_for("home"))
+
+@app.route("/add", methods=["GET", "POST"])
+def add():
+    add_form = AddMovieForm()
+
+    if add_form.validate_on_submit():
+        rp(add_form.movie_title.data)
+
+
+    return render_template("add.html", form=add_form)
 
 if __name__ == '__main__':
     app.run(debug=True)

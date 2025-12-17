@@ -209,6 +209,7 @@ __marimo__/
 
 # Ignore all hidden files/folders
 # .*
+.api_creds.json
 
 # Keep these by undoing the ignore
 # !.gitignore
