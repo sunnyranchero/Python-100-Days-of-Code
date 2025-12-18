@@ -2,22 +2,35 @@ from flask import Flask, render_template, redirect, url_for, request
 from flask_bootstrap import Bootstrap5
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import Integer, String, Float, exists
+from sqlalchemy import Integer, String, Float, exists, func, select, update
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, DecimalField
 from wtforms.validators import DataRequired, NumberRange, Length
 import requests
 import os
+import json
 from rich import print as rp
 
-# Due to my setup, make sure our CWD is the current dir
-if os.getcwd() != os.path.dirname(__file__):
-    os.chdir(os.path.abspath(os.path.dirname(__file__)))
-    print("Cwd was changed to the current file dir __file__")
+# Define a form to use in the sql code (this was from a few lessons back)
+
+class EditMovieForm(FlaskForm):
+    movie_rating = DecimalField('Rating out of 10 (7, 5.5, 6.3)', 
+                                places=1,
+                                validators=[DataRequired(), 
+                                            NumberRange(min=0, max=10)])
+    new_review = StringField('Your Review',
+                             validators=[DataRequired(), Length(max=100)])
+    submit_btn = SubmitField('Submit')
+
+class AddMovieForm(FlaskForm):
+    movie_title = StringField('Movie Title',
+                              validators=[DataRequired()])
+    submit_btn = SubmitField('Submit')
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
 Bootstrap5(app)
+# API Access is located here: https://www.themoviedb.org/settings/api
 
 # CREATE DB
 
@@ -33,13 +46,13 @@ db.init_app(app)
 class MoviesDb(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     # Not making this unique: Total Recall being 2 dif movies w/ same title
-    title: Mapped[str] 
-    year: Mapped[int]
-    description: Mapped[str]
-    rating: Mapped[float]
-    ranking: Mapped[int]
-    review: Mapped[str]
-    img_url: Mapped[str]
+    title: Mapped[str] = mapped_column(nullable=True)
+    year: Mapped[int] = mapped_column(nullable=True)
+    description: Mapped[str] = mapped_column(nullable=True)
+    rating: Mapped[float] = mapped_column(nullable=True)
+    ranking: Mapped[int] = mapped_column(nullable=True)
+    review: Mapped[str] = mapped_column(nullable=True)
+    img_url: Mapped[str] = mapped_column(nullable=True)
 
     def __repr__(self):
         """If you try to print the object: 
@@ -52,9 +65,63 @@ class MoviesDb(db.Model):
 with app.app_context():
     db.create_all()
 
+def query_movie_db(type:str, search_term:str) -> dict:
+    """This is used to query the movies database\n
+    This yields a dict containing the info required."""
+        
+    api_file_path = os.path.abspath("./.api_creds.json")
+    with open(api_file_path, "r") as f:
+        api_data = json.load(f)
+ 
+    if type == "auth":
+        header = {
+        "accept": "application/json",
+        "Authorization": f"Bearer {api_data["api_read_access_token"]}"
+        }
+        url = api_data["url_auth"]
+
+        response = requests.get(url, headers=header)
+        response_dict = json.loads(response.text)
+
+        rp(response_dict)
+        if response_dict["success"] != True:
+            rp("[red]Auth was unsuccessful[/red]")
+            return None
+
+        rp("[green]Auth successful[/green]")
+        return response_dict
+    elif type == "search":
+        url = api_data["url_movie_search"]
+
+        response = requests.get(url, params={
+            "api_key": api_data["api_key"],
+            "query": search_term
+            })
+        rp(f"Request response code: {response.status_code}")
+        if response.status_code != 200:
+            rp("[red]Auth was unsuccessful[/red]")
+            return None
+
+        rp("[green]Auth successful[/green]")
+        
+        return response.json()["results"]
+    
+    elif type == "add_selected":
+        url = str(api_data["url_add_selected"]).replace("{movie_id}",
+                                                         search_term)
+        response = requests.get(url,
+                                 params={"api_key": api_data["api_key"]})
+        rp(f"Request response code: {response.status_code}")
+
+        if response.status_code != 200:
+            rp("[red]Auth was unsuccessful[/red]")
+            return None
+
+        rp("[green]Auth successful[/green]")
+        
+        return response.json()
+           
 # Add Movie
-
-
 def add_movie(new_movie_obj):
     """Reusable function to create the movie if 1 does not exist\n
     takes in an object"""
@@ -94,23 +161,18 @@ def select_all() -> list[MoviesDb] :
 
     return movie_obj_list
 
-# Define a form to use in the sql code (this was from a few lessons back)
+def update_ranking():
 
-class EditMovieForm(FlaskForm):
-    movie_rating = DecimalField('Rating out of 10 (7, 5.5, 6.3)', 
-                                places=1,
-                                validators=[DataRequired(), 
-                                            NumberRange(min=0, max=10)])
-    new_review = StringField('Your Review',
-                             validators=[DataRequired(), Length(max=100)])
-    submit_btn = SubmitField('Submit')
+    row_num = func.row_number().over(
+        order_by=MoviesDb.rating.desc()).label("rn")
+    subquery = select(MoviesDb.id, row_num).subquery()
 
-class AddMovieForm(FlaskForm):
-    movie_title = StringField('Movie Title',
-                              validators=[DataRequired()])
-    submit_btn = SubmitField('Submit')
+    update_stmt = update(MoviesDb).where(
+        MoviesDb.id == subquery.c.id).values(ranking=subquery.c.rn)
 
-
+    db.session.execute(update_stmt)
+    db.session.commit()
+  
 # Movie 1 info:
 new_movie_1 = MoviesDb(
     title="Phone Booth",
@@ -139,14 +201,21 @@ new_movie_2 = MoviesDb(
     img_url="https://image.tmdb.org/t/p/w500/t6HIqrRAclMCA60NsSmeqe9RmNV.jpg"
 )
 
-# Adding the creation here seems to keep triggering the insert
-# Keeping the insertion in the home page to limit recalls.
-# Nice to have: Maybe add an endpoint called "starter" to perform that insert.
+
+# Due to my setup, make sure our CWD is the current dir
+if os.getcwd() != os.path.dirname(__file__):
+    os.chdir(os.path.abspath(os.path.dirname(__file__)))
+    print("Cwd was changed to the current file dir __file__")
 
 with app.app_context():
+    # Adding the creation here seems to keep triggering the insert
+    # Keeping the insertion in the home page to limit recalls.
+    # Nice to have: Maybe add an endpoint called "starter" to perform that insert.
     add_movie(new_movie_1)
     add_movie(new_movie_2)
 
+
+###################### BEGIN FLASK CALLS AND ROUTES HERE #######################
 @app.route("/")
 def home():
     # If a database function that I made above is called within
@@ -157,7 +226,7 @@ def home():
     # outside an endpoint like where create_all() is. 
 
     # Triggering the add function so there is always test data.
-
+    update_ranking()
     movie_list = select_all()
 
     return render_template("index.html", movie_list=movie_list)
@@ -198,9 +267,38 @@ def add():
 
     if add_form.validate_on_submit():
         rp(add_form.movie_title.data)
+        data = query_movie_db(type="search",
+                        search_term=add_form.movie_title.data)
+        
+        # return redirect(url_for("select", query_data = data))
+        return render_template("select.html", query_data = data)      
 
 
     return render_template("add.html", form=add_form)
+
+@app.route("/find", methods=["GET", "POST"])
+def find():
+    id = request.args.get("id")
+    movie = query_movie_db(
+        type="add_selected",
+        search_term=id
+    )
+
+    rp(movie)
+    new_movie = MoviesDb(
+        title=movie["title"],
+        year=str(movie["release_date"]).split("-")[0],
+        description=movie["overview"],
+        # rating=5.5,
+        # ranking=5.5,
+        # review="",
+        img_url=f'https://image.tmdb.org/t/p/w500/{str(movie["poster_path"])}'      
+    )
+
+    add_movie(new_movie)
+    id = db.session.query(func.max(MoviesDb.id)).scalar()
+
+    return redirect(url_for("edit", id=id))
 
 if __name__ == '__main__':
     app.run(debug=True)

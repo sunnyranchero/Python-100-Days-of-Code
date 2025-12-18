@@ -1,0 +1,8 @@
+{
+    "url_source": "https://www.themoviedb.org/settings/api",
+    "url_auth": "https://api.themoviedb.org/3/authentication",
+    "url_movie_search": "https://api.themoviedb.org/3/search/movie",
+    "url_add_selected": "https://api.themoviedb.org/3/movie/{movie_id}",
+    "api_key":"Left blank on purpose",
+    "api_read_access_token":"Left blank on purpose"
+}
