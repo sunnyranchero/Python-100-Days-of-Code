@@ -1,0 +1,30 @@
+Goal:
+Building a RESTful Blog with Editing!
+
+###########################
+
+GET request upon loading of home
+endpoint is /post/4
+
+so this will need a <int:id> in the routing
+
+###########################
+
+POST request upon adding a new article
+endpoint is /new-post/
+redirects back to home after submtting the post.
+
+###########################
+
+PUT for editing the content of an existing post
+(I think this means we will be replacing the existing content in full rather
+than PATCHING a portion like we did in Day 66)
+
+endpoint is /edit-post/4
+so this will need a <int:id> in the routing
+
+the form is prepopulated with the values from before.
+it redirects back to the post after the edit.
+
+
+
