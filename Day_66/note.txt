@@ -1,0 +1,28 @@
+This lesson's goal is to build a REST API from scratch using Flask
+
+Rest is actually an acronymn
+
+It stands for:
+REpresentational
+State
+Transfer
+
+(I also remember there are other API types. I think SOAP is one of them.)
+
+The request is sent as an HTTP request.
+They can also be FTP requests.
+
+HTTPS (simply a "secure" version of HTTP)
+
+REST is just an an architectual style
+
+REST came about from Roy Fielding's PHD thesis around year 2000
+
+This basically put in place a bunch of rules for making an API restful
+
+The 2 main rules:
+1. Use HTTP request Verbs (GET, POST, Put/Patch(patch is new as of 2010), DELETE)
+-- CRUD for databases (Create, Read, Update, Delete) it almost mimics the HTTP Verbs
+
+2. Use specific pattern of routes/endpoint urls
+-- 
