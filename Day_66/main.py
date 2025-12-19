@@ -136,6 +136,7 @@ def all():
         "cafe": [
             cafe_obj.to_dict(compr=True) for cafe_obj in db_select_all]
             }
+    rp( f"[green]Count returned:[/green] {len(db_select_all)}")
     return jsonify(cafe_jsonify)
 
 # TODO: 3 create a way to find a cafe
@@ -172,11 +173,93 @@ def search():
 
 
 # HTTP POST - Create Record ##########################
+# TODO: 4 Create an endpoint to add a new entry into the db
+@app.route("/add", methods=["POST"])
+def add():
+    new_cafe = Cafe(
+        can_take_calls = bool(request.form.get("can_take_calls")),
+        coffee_price = request.form.get("coffee_price"),
+        has_sockets = bool(request.form.get("has_sockets")),
+        has_toilet = bool(request.form.get("has_toilet")),
+        has_wifi = bool(request.form.get("has_wifi")),
+        img_url = request.form.get("img_url"),
+        location = request.form.get("location"),
+        map_url = request.form.get("map_url"),
+        name = request.form.get("name"),
+        seats = request.form.get("seats")
+    )
+
+    db.session.add(new_cafe)
+    db.session.commit()
+
+    return_msg = {"response":{"success": "Succesfully added the new cafe."}}
+    return jsonify(return_msg)
+
 
 # HTTP PUT/PATCH - Update Record ##########################
 
+@app.route("/update-map/<int:cafe_id>", methods=["PATCH"])
+def update_map(cafe_id):
+    new_map_link = request.args.get("new_map_link")
+    cafe_obj = db.session.get(entity=Cafe, ident=cafe_id)
+    # returns to None if nothing was returned for that ID
+    if cafe_obj:
+        cafe_obj.map_url = new_map_link
+        db.session.commit()
+    else:
+        # The 404 at the end has to do with how Flask handles the return
+        # return is simply the response give. You may pass any HTTP code
+        # back to the client. 404 being the standard "Not found" error code
+        return jsonify(
+            error={
+            "Not Found": "Sorry a cafe with that id was not found in the db"}
+            ), 404
+
+@app.route("/update-price/<int:cafe_id>", methods=["PATCH"])    
+def update_price(cafe_id):
+    new_price = request.args.get("new_price")
+    cafe_obj = db.session.get(Cafe, cafe_id)
+
+    if not cafe_obj:
+        return jsonify(error={
+            "Not Found": "Sorry a cafe with that id was not found in the db"}), 404
+
+    cafe_obj.coffee_price = new_price
+    db.session.commit()
+    return jsonify(response={"success": "Successfully updated the price"}), 200
+
+
+
 # HTTP DELETE - Delete Record ##########################
 
+@app.route("/report-closed/<int:cafe_id>", methods=["DELETE"])
+def delete_record(cafe_id):
+    valid_key = "TopSecretAPIKey"
+    api_key = request.args.get("api-key")
+    if api_key != valid_key:
+        return jsonify(error="Sorry, your API key is not authorized."), 403
+    
+    cafe_obj = db.session.get(Cafe, cafe_id)
+    
+    if not cafe_obj:
+        return jsonify(error="Sorry, your cafe_id is invalid."), 404
+    
+    cafe_name = cafe_obj.name
+
+    # You must pass an object into the delete() method.
+    db.session.delete(cafe_obj)
+    db.session.commit()
+
+    return jsonify(success=f"Thank you, {cafe_name} has been removed"), 200
+
+
+
+# Finished Postman docs https://documenter.getpostman.com/view/50940038/2sB3dWqS76
+# Angela's docs: https://documenter.getpostman.com/view/2568017/TVRhd9qR
+# It looks like postman uses CURL as the command examples.
+# I also noticed that common practice for curl commands on a new line are escaped
+# I've seen people code it all in a single line in bash scripts. 
+# This is much simpler.
 
 if __name__ == '__main__':
     app.run(debug=True)

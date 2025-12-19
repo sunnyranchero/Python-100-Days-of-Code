@@ -26,3 +26,7 @@ The 2 main rules:
 
 2. Use specific pattern of routes/endpoint urls
 -- 
+
+
+Put is the equivelent of a full replacement.
+Patch is essentially just fix the part that is wrong.
