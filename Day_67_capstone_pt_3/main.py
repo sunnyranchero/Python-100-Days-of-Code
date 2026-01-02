@@ -7,26 +7,18 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired, URL
 from flask_ckeditor import CKEditor, CKEditorField
-from datetime import date
+from flask_ckeditor.utils import cleanify
+from datetime import date as dt
 import os
+from titlecase import titlecase
 from rich import print as rp
 
-'''
-Make sure the required packages are installed: 
-Open the Terminal in PyCharm (bottom left). 
-
-On Windows type:
-python -m pip install -r requirements.txt
-
-On MacOS type:
-pip3 install -r requirements.txt
-
-This will install the packages from the requirements.txt for this project.
-'''
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
 Bootstrap5(app)
+app.config['CKEDITOR_PKG_TYPE'] = 'standard'
+ckeditor = CKEditor(app)
 
 # Ensure this is running in the intended directory.
 cwd = os.getcwd()
@@ -54,9 +46,17 @@ class BlogPost(db.Model):
     author: Mapped[str] = mapped_column(String(250), nullable=False)
     img_url: Mapped[str] = mapped_column(String(250), nullable=False)
 
-
 with app.app_context():
     db.create_all()
+
+class PostForm(FlaskForm):
+    title = StringField("Blog Post Title", validators=[DataRequired()])
+    subtitle = StringField("Subtitle", validators=[DataRequired()])
+    name = StringField("Your Name", validators=[DataRequired()])
+    blog_img = StringField("Blog Image URL", validators=[DataRequired()])
+    body = CKEditorField("Blog Content", validators=[DataRequired()])
+    submit = SubmitField("Submit Post", validators=[DataRequired()])
+
 
 
 @app.route('/')
@@ -87,6 +87,31 @@ def show_post(post_id):
 
 
 # TODO: add_new_post() to create a new blog post
+@app.route("/new-post", methods=['GET','POST'])
+def add_new_post():
+    form = PostForm()
+
+    if form.validate_on_submit():
+        today_date = dt.today().strftime("%B %d, %Y")
+        rp(form.title.data)
+        rp(form.subtitle.data)
+        rp(form.name.data)
+        rp(form.blog_img.data)
+        rp(form.body.data)
+        new_post = BlogPost(
+            title=titlecase(form.title.data),
+            subtitle=form.subtitle.data,
+            author=form.name.data,
+            img_url=form.blog_img.data,
+            body=cleanify(form.body.data),
+            date=today_date
+        )
+        db.session.add(new_post)
+        db.session.commit()
+
+        return redirect(url_for("get_all_posts"))
+
+    return render_template("make-post.html", form=form)
 
 # TODO: edit_post() to change an existing blog post
 
