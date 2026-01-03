@@ -52,8 +52,8 @@ with app.app_context():
 class PostForm(FlaskForm):
     title = StringField("Blog Post Title", validators=[DataRequired()])
     subtitle = StringField("Subtitle", validators=[DataRequired()])
-    name = StringField("Your Name", validators=[DataRequired()])
-    blog_img = StringField("Blog Image URL", validators=[DataRequired()])
+    author = StringField("Your Name", validators=[DataRequired()])
+    img_url = StringField("Blog Image URL", validators=[DataRequired()])
     body = CKEditorField("Blog Content", validators=[DataRequired()])
     submit = SubmitField("Submit Post", validators=[DataRequired()])
 
@@ -95,14 +95,14 @@ def add_new_post():
         today_date = dt.today().strftime("%B %d, %Y")
         rp(form.title.data)
         rp(form.subtitle.data)
-        rp(form.name.data)
-        rp(form.blog_img.data)
+        rp(form.author.data)
+        rp(form.img_url.data)
         rp(form.body.data)
         new_post = BlogPost(
             title=titlecase(form.title.data),
             subtitle=form.subtitle.data,
-            author=form.name.data,
-            img_url=form.blog_img.data,
+            author=form.author.data,
+            img_url=form.img_url.data,
             body=cleanify(form.body.data),
             date=today_date
         )
@@ -114,6 +114,31 @@ def add_new_post():
     return render_template("make-post.html", form=form)
 
 # TODO: edit_post() to change an existing blog post
+@app.route("/edit-post/<int:post_id>", methods=["GET", "POST"])
+def edit_post(post_id):
+    post = db.get_or_404(BlogPost, ident=post_id)
+
+    edit_form = PostForm(
+        title=post.title,
+        subtitle=post.subtitle,
+        author=post.author,
+        img_url=post.img_url,
+        body=post.body,
+    )
+
+    if edit_form.validate_on_submit():
+        # perform the updates in this field.
+        post.title=titlecase(edit_form.title.data)
+        post.subtitle=edit_form.subtitle.data
+        post.author=edit_form.author.data
+        post.img_url=edit_form.img_url.data
+        post.body=cleanify(edit_form.body.data)
+        # The date is untouched as specified
+        # This will produce an update statement to the db
+        db.session.commit()
+        return redirect(url_for("show_post", post_id=post.id))
+
+    return render_template("make-post.html", form=edit_form, is_edit=True)
 
 # TODO: delete_post() to remove a blog post from the database
 
