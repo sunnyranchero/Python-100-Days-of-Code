@@ -24,6 +24,10 @@ if cwd != proj_dir:
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret-key-goes-here'
 
+# create the login manager
+login_manager = LoginManager()
+login_manager.init_app(app)
+
 # CREATE DATABASE
 
 class Base(DeclarativeBase):
@@ -42,7 +46,7 @@ db.init_app(app)
 # this creates a child class that represents the User table metadata 
 # from the db.
 # the metaclass from the parent adds the entry back to the Base in the model.
-class User(db.Model):
+class User(UserMixin ,db.Model):
     id: Mapped[int] = mapped_column(Integer,
                                      primary_key=True,
                                      autoincrement=True)
@@ -56,9 +60,14 @@ with app.app_context():
 
 ####################### Proj logic goes here ###########################
 
+@login_manager.user_loader
+def load_user(user_id):
+    return db.get_or_404(User, ident=user_id)
+
 @app.route('/')
 def home():
-    return render_template("index.html")
+    return render_template("index.html",
+                            logged_in=current_user.is_authenticated)
 
 
 @app.route('/register', methods=["GET", "POST"])
@@ -97,27 +106,56 @@ def register():
             return render_template("secrets.html", user_name=form_name)
         
         else:
-            return render_template("register.html", user_taken=True)
+            flash("User name already taken.")
+            # if a flash message has been used, use the redirect.
+            # If not, use the user_taken method to display the already
+            # registereed warning.
+            # return render_template("register.html", user_taken=True)
+            return redirect(url_for("register"))
 
     return render_template("register.html")
 
 
-@app.route('/login')
+@app.route('/login', methods=["GET", "POST"])
 def login():
-    return render_template("login.html")
+
+    if request.method == "POST":
+        form_email = request.form["email"]
+        form_password = request.form["password"]
+
+        user_select = select(User).where(User.email == form_email)
+        user = db.session.execute(user_select).scalar()
+
+        if not user:
+            flash("Email was invalid")
+            return redirect(url_for("login"))
+        
+        elif not check_password_hash(user.password, form_password):
+            flash("Password was incorrect.")
+            return redirect(url_for("login"))
+        else:
+            login_user(user)
+            return render_template("secrets.html", user_name=user.name)
+        
+    return render_template("login.html",
+                            logged_in=current_user.is_authenticated)
 
 
 @app.route('/secrets')
+@login_required
 def secrets():
-    return render_template("secrets.html")
+    return render_template("secrets.html", user_name=current_user.name)
 
 
 @app.route('/logout')
+@login_required
 def logout():
-    pass
+    logout_user()
+    return redirect(url_for("home"))
 
 
 @app.route('/download')
+@login_required
 def download():
     return send_from_directory("static", 
                                "files/cheat_sheet.pdf",
