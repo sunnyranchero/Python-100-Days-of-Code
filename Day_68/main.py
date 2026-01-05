@@ -69,7 +69,11 @@ def register():
         # Get the username from the form.
         form_name = request.form["name"]
         form_email = request.form["email"]
-        form_password = request.form["password"]
+        form_password = generate_password_hash(
+            request.form["password"],
+            method="pbkdf2:sha256",
+            salt_length=8)
+                                               
         
         rp(f"{form_name} | {form_email} | {form_password}")
 
