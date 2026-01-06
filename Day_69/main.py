@@ -6,25 +6,24 @@ from flask_gravatar import Gravatar
 from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import Integer, String, Text
+from sqlalchemy import Integer, String, Text, select, update, func
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
-# Import your forms from the forms.py
-from forms import CreatePostForm
+# TODO: Import your forms from the forms.py - 2 >done
+from forms import CreatePostForm, RegisterForm
 
+# Change to the current project directory
+import os
+from rich import print as rp
 
-'''
-Make sure the required packages are installed: 
-Open the Terminal in PyCharm (bottom left). 
+cwd = os.getcwd()
+proj_dir = os.path.dirname(__file__)
 
-On Windows type:
-python -m pip install -r requirements.txt
+if cwd != proj_dir:
+    os.chdir(proj_dir)
+    rp("[red]Changed the cwd to the proj dir[/red]")
 
-On MacOS type:
-pip3 install -r requirements.txt
-
-This will install the packages from the requirements.txt for this project.
-'''
+########### Begin Flask Proj ###################
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
@@ -54,17 +53,54 @@ class BlogPost(db.Model):
     img_url: Mapped[str] = mapped_column(String(250), nullable=False)
 
 
-# TODO: Create a User table for all your registered users. 
+# TODO: Create a User table for all your registered users. - 3 >done
+class Users(db.Model):
+    __tablename__ = "users"
+    id: Mapped[int] = mapped_column(Integer,
+                                    primary_key=True,
+                                    autoincrement=True)
+    email: Mapped[str] = mapped_column(String)
+    password: Mapped[str] = mapped_column(String)
+    name: Mapped[str] = mapped_column(String)
 
 
 with app.app_context():
     db.create_all()
 
 
-# TODO: Use Werkzeug to hash the user's password when creating a new user.
-@app.route('/register')
+# TODO: Use Werkzeug to hash the user's password when creating a
+#  new user. - 4 >done
+@app.route('/register', methods=["GET", "POST"])
 def register():
-    return render_template("register.html")
+    form = RegisterForm()
+
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password.data
+        name = form.name.data
+        query_select = select(func.count()).select_from(Users).where(
+            func.lower(Users.email) == email.lower())
+        user_count = db.session.execute(query_select).scalar()
+        rp(user_count)
+
+        if user_count == 0:
+            new_user = Users(
+                email = email,
+                password = password,
+                name = name
+            )
+            db.session.add(new_user)
+            db.session.commit()
+            return redirect(url_for("login"))
+        
+        # TODO: START HERE. Finish doing the registration and the flash msg.
+        # I just polished up the check for an existing user using lc email compare.
+        
+        flash("The email is already registered. Please sign in or try another.")
+        return redirect(url_for("register"))
+
+
+    return render_template("register.html", form=form)
 
 
 # TODO: Retrieve a user from the database based on their email. 
