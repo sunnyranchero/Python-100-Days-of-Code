@@ -93,10 +93,7 @@ def register():
             db.session.commit()
             return redirect(url_for("login"))
         
-        # TODO: START HERE. Finish doing the registration and the flash msg.
-        # I just polished up the check for an existing user using lc email compare.
-        
-        flash("The email is already registered. Please sign in or try another.")
+        flash("This email is already registered. Please sign in or try another.")
         return redirect(url_for("register"))
 
 
