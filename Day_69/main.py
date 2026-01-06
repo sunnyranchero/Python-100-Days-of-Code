@@ -108,7 +108,8 @@ def register():
         return redirect(url_for("register"))
 
 
-    return render_template("register.html", form=form)
+    return render_template("register.html", form=form,
+                            current_user=current_user)
 
 
 # TODO: Retrieve a user from the database based on their email. 
@@ -132,18 +133,16 @@ def login():
             return redirect(url_for("login"))
         
         else:
-            login(user)
-            redirect(url_for("get_all_posts"))
+            login_user(user)
+            return redirect(url_for("get_all_posts"))
 
-
-        return redirect(url_for("login"))
-
-    return render_template("login.html",form=form)
+    return render_template("login.html",form=form, current_user=current_user)
 
 
 @app.route('/logout')
 @login_required
 def logout():
+    logout_user()
     return redirect(url_for('get_all_posts'))
 
 
