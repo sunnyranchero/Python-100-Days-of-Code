@@ -25,6 +25,16 @@ if cwd != proj_dir:
     os.chdir(proj_dir)
     rp("[red]Changed the cwd to the proj dir[/red]")
 
+####################### Debug ##############################
+# The cookies are stalled in the regular browser. Check these links
+# https://gist.github.com/TheMuellenator/b4e21f77c04afcac85a7ec2a262ea0d7?permalink_comment_id=5076382#gistcomment-5076382
+# https://gist.github.com/TheMuellenator/b4e21f77c04afcac85a7ec2a262ea0d7?permalink_comment_id=5087970#gistcomment-5087970
+# The best course of action is to clear the cookies like the 2nd user suggested.
+# this is what the cyan colored print statements were for. Just left overs.
+
+# if flask is stuck running in a process even though it stopped:
+# kill -9 $(lsof -t -i:5003) 
+
 ########### Begin Flask Proj ###################
 
 app = Flask(__name__)
@@ -44,19 +54,24 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///posts.db'
 db = SQLAlchemy(model_class=Base)
 db.init_app(app)
 
+# TODO: custom. Create an admin only decorator
+
+def admin_only(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # if my id is not 1, then abort
+        if current_user.get_id() != "1":
+            return abort(403)
+        else:
+            # otherwise return with whatever was being returned. 
+            # Edit goes to edit. Delete goes to delete.
+            return f(*args, **kwargs)
+    return decorated_function
+
 
 # CONFIGURE TABLES
-class BlogPost(db.Model):
-    __tablename__ = "blog_posts"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    title: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
-    subtitle: Mapped[str] = mapped_column(String(250), nullable=False)
-    date: Mapped[str] = mapped_column(String(250), nullable=False)
-    body: Mapped[str] = mapped_column(Text, nullable=False)
-    author: Mapped[str] = mapped_column(String(250), nullable=False)
-    img_url: Mapped[str] = mapped_column(String(250), nullable=False)
 
-
+rp("[cyan]Starting create db tables [/cyan]")
 # TODO: Create a User table for all your registered users. - 3 >done
 class Users(UserMixin, db.Model):
     __tablename__ = "users"
@@ -66,12 +81,38 @@ class Users(UserMixin, db.Model):
     email: Mapped[str] = mapped_column(String)
     password: Mapped[str] = mapped_column(String)
     name: Mapped[str] = mapped_column(String)
+    # this is saying that Blog post is related to the users on author
+    # author is the relationship defined in the child table. not a field.
+    posts = relationship("BlogPost", back_populates="author")
 
 
+class BlogPost(db.Model):
+    __tablename__ = "blog_posts"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    title: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
+    subtitle: Mapped[str] = mapped_column(String(250), nullable=False)
+    date: Mapped[str] = mapped_column(String(250), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # this is saying i'm related to Users, fill posts field.
+    # the value I want in this author_id field is from users table, id column
+    # the previous string used is no longer needed. We can do a join on these
+    # fields.
+    author_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("users.id"))
+    # author: Mapped[str] = mapped_column(String(250), nullable=False)
+    author = relationship("Users", back_populates="posts")
+
+    img_url: Mapped[str] = mapped_column(String(250), nullable=False)
+
+
+
+rp("[cyan]Triggering creation[/cyan]")
 with app.app_context():
     db.create_all()
-
+rp("[cyan]Created[/cyan]")
 ############################ Flask Code ###################
+
+rp("[cyan]Starting flask code[/cyan]")
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -102,7 +143,10 @@ def register():
             )
             db.session.add(new_user)
             db.session.commit()
-            return redirect(url_for("login"))
+
+            login_user(new_user)
+
+            return redirect(url_for("get_all_posts"))
         
         flash("This email is already registered. Please sign in or try another.")
         return redirect(url_for("register"))
@@ -148,8 +192,10 @@ def logout():
 
 @app.route('/')
 def get_all_posts():
+    rp("[cyan]Loading posts[/cyan]")
     result = db.session.execute(db.select(BlogPost))
     posts = result.scalars().all()
+    rp("[cyan]Starting to render posts[/cyan]")
     return render_template("index.html", all_posts=posts)
 
 
@@ -162,6 +208,7 @@ def show_post(post_id):
 
 # TODO: Use a decorator so only an admin user can create a new post
 @app.route("/new-post", methods=["GET", "POST"])
+@admin_only
 def add_new_post():
     form = CreatePostForm()
     if form.validate_on_submit():
@@ -181,6 +228,7 @@ def add_new_post():
 
 # TODO: Use a decorator so only an admin user can edit a post
 @app.route("/edit-post/<int:post_id>", methods=["GET", "POST"])
+@admin_only
 def edit_post(post_id):
     post = db.get_or_404(BlogPost, post_id)
     edit_form = CreatePostForm(
@@ -202,6 +250,7 @@ def edit_post(post_id):
 
 
 # TODO: Use a decorator so only an admin user can delete a post
+@admin_only
 @app.route("/delete/<int:post_id>")
 def delete_post(post_id):
     post_to_delete = db.get_or_404(BlogPost, post_id)
@@ -221,4 +270,5 @@ def contact():
 
 
 if __name__ == "__main__":
+    rp("[cyan]Triggering my script[/cyan]")
     app.run(debug=True, port=5002)
