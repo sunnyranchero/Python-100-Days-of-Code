@@ -1,5 +1,7 @@
 from datetime import date
-from flask import Flask, abort, render_template, redirect, url_for, flash
+from flask import (Flask, abort, 
+                   render_template, redirect, 
+                   url_for, flash, request)
 from flask_bootstrap import Bootstrap5
 from flask_ckeditor import CKEditor
 from flask_gravatar import Gravatar
@@ -12,7 +14,7 @@ from sqlalchemy import Integer, String, Text, select, update, func
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 # TODO: Import your forms from the forms.py - 2 >done
-from forms import CreatePostForm, RegisterForm, LoginForm
+from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
 
 # Change to the current project directory
 import os
@@ -54,6 +56,17 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///posts.db'
 db = SQLAlchemy(model_class=Base)
 db.init_app(app)
 
+gravatar = Gravatar(
+    app,
+    size=100,
+    rating="g",
+    default="retro",
+    force_default=False,
+    force_lower=False,
+    use_ssl=False,
+    base_url=None
+)
+
 # TODO: custom. Create an admin only decorator
 
 def admin_only(f):
@@ -84,25 +97,52 @@ class Users(UserMixin, db.Model):
     # this is saying that Blog post is related to the users on author
     # author is the relationship defined in the child table. not a field.
     posts = relationship("BlogPost", back_populates="author")
+    comments = relationship("Comments", back_populates="comment_author")
 
 
 class BlogPost(db.Model):
-    __tablename__ = "blog_posts"
+    __tablename__ = "blog_post"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
     subtitle: Mapped[str] = mapped_column(String(250), nullable=False)
     date: Mapped[str] = mapped_column(String(250), nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
 
-    # this is saying i'm related to Users, fill posts field.
+    # this is saying i'm related to Users and can access it as an object.
+    # This is where posts.author.name comes from. posts is from the rendering
+    # in the flask/jinja template rendering. So posts is an object.
+    # You are accessing the Users table as an object in SQLALchemy's ORM,
+    # thorough the relationship "author". Author is an object. 
+    # author.name is the column attribute of that object.
+
     # the value I want in this author_id field is from users table, id column
     # the previous string used is no longer needed. We can do a join on these
     # fields.
+    # This line is the only reason SQLAlchemy's ORM knows what to do
+    # with the author_id column when making a post. Because we are using a 
+    # session (Mixin), it knows the id and will insert that value in this field.
+    # The foreign key reference will use the value in __tablename__ if deifined
+    # else it will use the lowercase class name of the table.
     author_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("users.id"))
     # author: Mapped[str] = mapped_column(String(250), nullable=False)
     author = relationship("Users", back_populates="posts")
+    comments = relationship("Comments", back_populates="posts")
 
     img_url: Mapped[str] = mapped_column(String(250), nullable=False)
+
+class Comments(db.Model):
+    __tablename__ = "comments"
+    id: Mapped[int] = mapped_column(Integer,
+                                     primary_key=True,
+                                     autoincrement=True)
+    comment_author_id: Mapped[int] = mapped_column(Integer, 
+                                                   db.ForeignKey("users.id"))
+    post_id: Mapped[int] = mapped_column(Integer,
+                                         db.ForeignKey("blog_post.id"))
+    comment_body: Mapped[str] = mapped_column(Text)
+    # relationships
+    comment_author = relationship("Users", back_populates="comments")
+    posts = relationship("BlogPost", back_populates="comments")
 
 
 
@@ -200,10 +240,34 @@ def get_all_posts():
 
 
 # TODO: Allow logged-in users to comment on posts
-@app.route("/post/<int:post_id>")
+@app.route("/post/<int:post_id>", methods=["GET", "POST"])
 def show_post(post_id):
+    if not current_user.is_authenticated:
+        flash("Please log in to comment on the post.")
+
     requested_post = db.get_or_404(BlogPost, post_id)
-    return render_template("post.html", post=requested_post)
+    comment_form = CommentForm()
+
+    comments_query = select(Comments).select_from(Comments).where(
+        Comments.post_id == post_id).order_by(Comments.id.desc())
+    comments_posted = db.session.execute(comments_query).scalars().all()
+
+    if comment_form.validate_on_submit():
+        rp(f"[red]comment:\n{comment_form.data}[/red]")
+        new_comment = Comments(
+            comment_author_id = current_user.id,
+            post_id =  post_id,
+            comment_body = comment_form.comment.data
+            
+        )
+        db.session.add(new_comment)
+        db.session.commit()
+
+        return redirect(request.url)
+
+    return render_template("post.html", post=requested_post,
+                            form=comment_form, current_user=current_user,
+                            comments=comments_posted)
 
 
 # TODO: Use a decorator so only an admin user can create a new post
@@ -247,7 +311,6 @@ def edit_post(post_id):
         db.session.commit()
         return redirect(url_for("show_post", post_id=post.id))
     return render_template("make-post.html", form=edit_form, is_edit=True)
-
 
 # TODO: Use a decorator so only an admin user can delete a post
 @admin_only

@@ -1,4 +1,5 @@
 {% include "header.html" %}
+{% from "bootstrap5/form.html" import render_form %}
 
 <!-- Page Header-->
 <header class="masthead" style="background-image: url('{{post.img_url}}')">
@@ -10,7 +11,7 @@
           <h2 class="subheading">{{ post.subtitle }}</h2>
           <span class="meta"
             >Posted by
-            <a href="#">{{ post.author }}</a>
+            <a href="#">{{ post.author.name }}</a>
             on {{ post.date }}
           </span>
         </div>
@@ -26,6 +27,7 @@
       <div class="col-md-10 col-lg-8 col-xl-7">
         {{ post.body|safe }}
         <!--TODO: Only show Edit Post button if user id is 1 (admin user) -->
+        {% if current_user.id == 1 %}
         <div class="d-flex justify-content-end mb-4">
           <a
             class="btn btn-primary float-right"
@@ -33,26 +35,55 @@
             >Edit Post</a
           >
         </div>
+        {% endif %}
 
         <!-- Comments Area -->
         <!-- TODO: Add a CKEditor for commenting below -->
         <div class="comment">
+          <hr>
+          {% if current_user.is_authenticated %}
+            {{ ckeditor.load() }}
+            {{ ckeditor.config(name="comment") }}
+            {{ render_form(form, novalidate=True, button_map={"submit": "primary"}) }}
+          {% else %}
+            {% with messages = get_flashed_messages() %}
+              {% if messages %}
+                {% for message in messages %}
+                <div>
+                  <p class="flash">{{ message }}</p>
+                </div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+          {% endif %}
           <!-- TODO: Show all the comments on a post -->
-          <ul class="commentList">
-            <li>
-              <div class="commenterImage">
-                <img src="../static/assets/img/default-profile.jpg" />
-              </div>
-              <div class="commentText">
-                <p>Some comment</p>
-                <span class="date sub-text">comment author name</span>
-              </div>
-            </li>
-          </ul>
+           <br>
+           <div>
+            <ul class="commentList">
+              {% for comment in comments %}
+              <li>
+                <div class="commenterImage">
+                  <!-- <img src="../static/assets/img/default-profile.jpg" /> -->
+                  <img src={{ comment.comment_author.email | gravatar }} />
+                </div>
+                <div class="commentText">       
+                    <p>{{ comment.comment_body|safe }}</p>
+                    <!-- You can access the other table data because it is 
+                    stored in the ORM in the sqlalchemy code relationship -->
+                    <span
+                      class="date sub-text">{{ comment.comment_author.name }}
+                    </span>
+                </div>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
         </div>
       </div>
     </div>
   </div>
+  <br>
 </article>
 
 {% include "footer.html" %}
